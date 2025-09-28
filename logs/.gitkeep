@@ -1,0 +1,6 @@
+# Logs directory
+# This directory will contain bot log files
+# Logs are rotated automatically based on size and retention settings
+
+*.log
+*.log.*

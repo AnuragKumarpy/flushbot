@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  flushbot:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: flushbot-app
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://flushbot:${POSTGRES_PASSWORD}@postgres:5432/flushbot
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env.production
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - flushbot-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: flushbot-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=flushbot
+      - POSTGRES_USER=flushbot
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-flushbot123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - flushbot-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: flushbot-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - flushbot-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  flushbot-network:
+    driver: bridge
